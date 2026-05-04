@@ -86,12 +86,14 @@ function reducer(state: AppState, action: Action): AppState {
 interface AppContextType {
   state: AppState
   dispatch: React.Dispatch<Action>
+  authReady: boolean
 }
 
 const AppContext = createContext<AppContextType | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, baseDispatch] = useReducer(reducer, initialState)
+  const [authReady, setAuthReady] = React.useState(false)
   const stateRef = useRef(state)
   const loadedEmailRef = useRef<string | null>(null)
 
@@ -121,6 +123,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch { /* ignore */ }
+    // Signal that auth state has been restored from localStorage — routes can now render
+    setAuthReady(true)
   }, [])
 
   // Persist to localStorage on every change
@@ -231,7 +235,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, authReady }}>
       {children}
     </AppContext.Provider>
   )

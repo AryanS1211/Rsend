@@ -54,7 +54,15 @@ function PrivateRoutes() {
 }
 
 function AppRoutes() {
-  const { state } = useApp()
+  const { state, authReady } = useApp()
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <Routes>

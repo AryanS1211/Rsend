@@ -510,6 +510,22 @@ export default function DataImport() {
   const [syncing, setSyncing] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const autoSyncedRef = useRef(false)
+
+  // Auto-sync Google Sheet sources that have no row data (e.g. after a page refresh)
+  useEffect(() => {
+    if (autoSyncedRef.current) return
+    const emptySources = state.dataSources.filter(ds => ds.type === 'google_sheets' && ds.data.length === 0 && ds.url)
+    if (emptySources.length === 0) return
+    autoSyncedRef.current = true
+    emptySources.forEach(async ds => {
+      try {
+        const updated = await syncGoogleSheet(ds)
+        dispatch({ type: 'UPDATE_DATA_SOURCE', payload: updated })
+      } catch { /* silent — user can manually sync if it fails */ }
+    })
+  }, [state.dataSources, dispatch])
+
   // ── Google Sheets Connect ──────────────────────────────────────────────────
 
   async function handleConnect() {

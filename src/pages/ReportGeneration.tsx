@@ -5,7 +5,7 @@ import {
 } from '@hello-pangea/dnd'
 import {
   BarChart2, GripVertical, Trash2, Wand2, Pencil, Check,
-  FileDown, FileSpreadsheet, Mail, ChevronDown, X, FileText, Sparkles,
+  FileDown, FileSpreadsheet, Mail, ChevronDown, X, FileText, Sparkles, Send,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import ChartRenderer from '../components/charts/ChartRenderer'
@@ -349,6 +349,15 @@ function ChartCard({ chart, index, data, columns, onDelete, onUpdate }: ChartCar
   )
 }
 
+function PlaneSVG() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" className="text-white">
+      <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReportGeneration() {
   const { state, dispatch } = useApp()
@@ -360,6 +369,7 @@ export default function ReportGeneration() {
   const [selectedDsId, setSelectedDsId] = useState<string>(
     navState?.dsId ?? state.activeDataSourceId ?? state.dataSources[0]?.id ?? ''
   )
+  const [selectedSubSheet, setSelectedSubSheet] = useState<string>('primary')
   const [prompt, setPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
   const [autoRunning, setAutoRunning] = useState(false)
@@ -369,6 +379,20 @@ export default function ReportGeneration() {
   const [showEmailModal, setShowEmailModal] = useState(false)
 
   const ds = state.dataSources.find(d => d.id === selectedDsId) ?? null
+
+  // Resolve the active data/columns based on selected sub-sheet
+  const activeData = (() => {
+    if (!ds) return []
+    if (selectedSubSheet === 'primary') return ds.data
+    const sub = ds.subSheets?.find(s => s.name === selectedSubSheet)
+    return sub?.data ?? ds.data
+  })()
+  const activeColumns = (() => {
+    if (!ds) return []
+    if (selectedSubSheet === 'primary') return ds.columns
+    const sub = ds.subSheets?.find(s => s.name === selectedSubSheet)
+    return sub?.columns ?? ds.columns
+  })()
 
   const lastReport = state.reports
     .filter(r => r.dataSourceId === selectedDsId)
@@ -390,6 +414,9 @@ export default function ReportGeneration() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Reset sub-sheet selection when data source changes
+  useEffect(() => { setSelectedSubSheet('primary') }, [selectedDsId])
 
   // When data source changes, load its saved report (or clear charts if none)
   useEffect(() => {
@@ -433,14 +460,15 @@ export default function ReportGeneration() {
 
   function handleAutoGenerate() {
     if (!ds) return
-    triggerAutoGenerate(ds.columns, ds.name)
+    const label = selectedSubSheet !== 'primary' ? `${ds.name} — ${selectedSubSheet}` : ds.name
+    triggerAutoGenerate(activeColumns, label)
   }
 
   async function handleGenerate() {
     if (!ds || !prompt.trim()) return
     setGenerating(true)
     await new Promise(r => setTimeout(r, 500))
-    const config = parsePrompt(prompt, ds.columns)
+    const config = parsePrompt(prompt, activeColumns)
     const newCharts = [...activeCharts, config]
     setActiveCharts(newCharts)
 
@@ -523,12 +551,17 @@ export default function ReportGeneration() {
 
       {/* Header */}
       <div className="flex items-start justify-between mb-8 pb-6 border-b border-slate-200/70">
-        <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Analytics</p>
-          <h1 className="text-2xl font-bold text-slate-800">Generate Report</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Auto-generate all charts from your data, or describe a specific visualization.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm flex-shrink-0">
+            <PlaneSVG />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Email Delivery System</p>
+            <h1 className="text-2xl font-bold text-slate-800">Generate Report</h1>
+            <p className="text-slate-500 text-sm mt-0.5">
+              Auto-generate all charts from your data, or describe a specific visualization.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -563,6 +596,27 @@ export default function ReportGeneration() {
               </select>
               <ChevronDown size={13} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
             </div>
+            {/* Sub-sheet selector — shown only when the source has multiple sheets */}
+            {ds && ds.subSheets && ds.subSheets.length > 0 && (
+              <div className="mt-2">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Sheet / Tab
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedSubSheet}
+                    onChange={e => setSelectedSubSheet(e.target.value)}
+                    className="w-full appearance-none border border-indigo-200 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50"
+                  >
+                    <option value="primary">Primary Sheet ({ds.data.length} rows)</option>
+                    {ds.subSheets.map(s => (
+                      <option key={s.name} value={s.name}>{s.name} ({s.data.length} rows)</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -572,9 +626,9 @@ export default function ReportGeneration() {
             <div>
               <p className="text-sm font-semibold text-indigo-700">Auto-generate all visualizations</p>
               <p className="text-xs text-indigo-500 mt-0.5">
-                Creates {autoGenerateCharts(ds.columns).length} charts from{' '}
-                <span className="font-medium">{ds.data.length} rows</span> across{' '}
-                <span className="font-medium">{ds.columns.length} columns</span> — instantly
+                Creates {autoGenerateCharts(activeColumns).length} charts from{' '}
+                <span className="font-medium">{activeData.length} rows</span> across{' '}
+                <span className="font-medium">{activeColumns.length} columns</span> — instantly
               </p>
             </div>
             <button
@@ -672,8 +726,8 @@ export default function ReportGeneration() {
                       key={chart.id}
                       chart={chart}
                       index={index}
-                      data={ds?.data ?? []}
-                      columns={ds?.columns ?? []}
+                      data={activeData}
+                      columns={activeColumns}
                       onDelete={handleDeleteChart}
                       onUpdate={handleUpdateChart}
                     />

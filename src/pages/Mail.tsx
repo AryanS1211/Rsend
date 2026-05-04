@@ -347,7 +347,7 @@ function expandWithAI(summary: string): string {
   TYPOS.forEach(([p, r]) => { text = text.replace(p, r) })
 
   // ── Step 3: Extract recipient name from greeting ──────────────────────────
-  const nameMatch = text.match(/^(?:hi|hello|hey|dear|to|greetings)[,.\s]+([a-zA-Z]+)[,.]?\s*/i)
+  const nameMatch = text.match(/^(?:hi|hello|hey|dear|to|greetings|good\s+(?:morning|afternoon|evening|day))[,.\s]+([a-zA-Z]+)[,.]?\s*/i)
   const recipientName = nameMatch
     ? nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1).toLowerCase()
     : null
