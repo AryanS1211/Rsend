@@ -567,8 +567,9 @@ export default function ReportGeneration() {
 
       {/* Data source + report name row */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
-        <div className="flex gap-3 mb-5">
-          <div className="flex-1">
+        <div className={`grid gap-3 mb-5 ${ds && ds.subSheets && ds.subSheets.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {/* Report Name */}
+          <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
               Report Name
             </label>
@@ -578,7 +579,9 @@ export default function ReportGeneration() {
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
           </div>
-          <div className="flex-1">
+
+          {/* Data Source */}
+          <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
               Data Source
             </label>
@@ -596,28 +599,29 @@ export default function ReportGeneration() {
               </select>
               <ChevronDown size={13} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
             </div>
-            {/* Sub-sheet selector — shown only when the source has multiple sheets */}
-            {ds && ds.subSheets && ds.subSheets.length > 0 && (
-              <div className="mt-2">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Sheet / Tab
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedSubSheet}
-                    onChange={e => setSelectedSubSheet(e.target.value)}
-                    className="w-full appearance-none border border-indigo-200 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50"
-                  >
-                    <option value="primary">Primary Sheet ({ds.data.length} rows)</option>
-                    {ds.subSheets.map(s => (
-                      <option key={s.name} value={s.name}>{s.name} ({s.data.length} rows)</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={13} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Sheet / Tab — only shown when sub-sheets exist, occupies 3rd column */}
+          {ds && ds.subSheets && ds.subSheets.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Sheet / Tab
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedSubSheet}
+                  onChange={e => setSelectedSubSheet(e.target.value)}
+                  className="w-full appearance-none border border-indigo-200 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50"
+                >
+                  <option value="primary">Primary Sheet ({ds.data.length} rows)</option>
+                  {ds.subSheets.map(s => (
+                    <option key={s.name} value={s.name}>{s.name} ({s.data.length} rows)</option>
+                  ))}
+                </select>
+                <ChevronDown size={13} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Auto-generate banner */}
