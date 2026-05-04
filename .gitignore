@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains Supabase keys — never commit)
+.env.local
+.env*.local
+.env
+
+# Claude internal
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Supabase CLI temp files
+supabase/.temp/
